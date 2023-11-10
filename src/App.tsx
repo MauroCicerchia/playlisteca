@@ -1,33 +1,37 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { collection } from "firebase/firestore";
+import { signInWithPopup, signOut } from 'firebase/auth'
+import { useAuthState } from "react-firebase-hooks/auth";
+import { useCollectionData } from "react-firebase-hooks/firestore";
+import { auth as firebaseAuth, googleAuthProvider, firestore } from "./services/firebase";
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [auth] = useAuthState(firebaseAuth);
+  const [events, eventsLoading, error] = useCollectionData(collection(firestore, 'events'));
+
+  console.log(events, eventsLoading, error);
+
+  if (!auth) {
+    return <button onClick={() => signInWithPopup(firebaseAuth, googleAuthProvider)}>Sign In With Google</button>
+  }
+
+  if(!auth?.email?.includes("@parsimotion.com") && !auth?.email?.includes("@producteca.com")) {
+    return (
+      <div>
+        Si no sos de Producteca tomatela
+        <button onClick={() => signOut(firebaseAuth)}>Sign Out</button>
+      </div>
+    )
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
+      <button onClick={() => signOut(firebaseAuth)}>Sign Out</button>
+      <ul>
+        {events?.map((event) => (
+          <li key={event.id}>{event.title}</li>
+        ))}
+      </ul>
     </>
   )
 }
